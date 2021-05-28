@@ -10,7 +10,7 @@ from common import Logger
 
 usage_msg = "Usage: python clean_CM.py <MODEL> <TESTED> <config_path>"
 
-def edit_one_cm(tsv_filename, scores, logger):
+def edit_one_cm(tsv_filename, features, scores, logger):
     """
     Append model scores to CM, reformat for Py-CMeditor
     Format: ID, Lon, Lat, Depth, SIG H, SIG D, SID, pred, score
@@ -28,24 +28,33 @@ def edit_one_cm(tsv_filename, scores, logger):
         for line in fread:
             fields = line.strip().split()
             fields = fields[0:7]
+            # check that the cm lat/lon and features lat/lon are similar
+            if not check_fields(fields[0:2],features[0,0:2]):
+                print("Lat and Lon don't match up")
+                break
+
             fields.append(str(scores[0]))
             fields.insert(0,str(count))
-
             count += 1
             scores = scores[1:]
+            features = features[1:,:]
             fwrite.write("{}\n".format(" ".join(fields)))
 
     fwrite.close()
-    return scores
+    return features, scores
 
-def get_cm_filename(filelist):
-    CM_filelist = []
-    with open(filelist) as f:
-        for line in f:
-            dir_name = os.path.dirname(line).replace("tsv_all","cm_data/public")
-            cm_name = os.path.basename(line).replace(".tsv",".cm").strip()
-            CM_filelist.append(dir_name + '/' + cm_name)
-    return CM_filelist
+def check_fields(cm_fields, pkl_fields):
+    """
+    Check the lat and lon of the pickled features against the cm file vals
+    """
+
+    if float(cm_fields[0]) != pkl_fields[0]:
+        return 0
+    elif float(cm_fields[1]) != pkl_fields[1]:
+        return 0
+    else:
+        return 1
+    
 
 if __name__ == '__main__':
     # args: Model-source Test-source config.json
@@ -67,7 +76,7 @@ if __name__ == '__main__':
     logger.log("begin CM cleaning for {} data trained on {} model".format(test_source, model_source))
 
     prediction_file = get_prediction_path(config["base_dir"], model_source, test_source)
-    _, _, scores, _ = load_predictions(prediction_file,logger)
+    features, _, scores, _ = load_predictions(prediction_file,logger)
 
     #CM_filelist = get_cm_filename(config["testing_files"])
     with open(config["testing_files"]) as f:
@@ -75,4 +84,4 @@ if __name__ == '__main__':
 
     for file in filelist:
         if test_source in os.path.dirname(file.strip()):
-            scores = edit_one_cm(file.strip(), scores, logger)
+            features, scores = edit_one_cm(file.strip(), features, scores, logger)
