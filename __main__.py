@@ -74,7 +74,6 @@ def run_testing_instances(model_name, regions):
         run_testing_specific_file(model_name, [filename], test_region_name, config, logger)
     run_testing_specific_file(model_name, filenames, "all", config, logger)
 
-@ray.remote
 def run_training_random(regions):
     logger = Logger()
     logfile = os.path.join(config["base_dir"], "training_log_all.log")
@@ -117,7 +116,7 @@ if __name__ == '__main__':
     elif task == "train-all":
         run_training_all_regions(regions)
     elif task == "train-random":
-        result_ids.append(run_training_random.remote(regions))
+        run_training_random(regions)
     elif task == "test-cross":
         for region in regions:
             result_ids.append(run_test.remote(region, regions, task))
