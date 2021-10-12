@@ -103,6 +103,7 @@ def get_datasets(region_str, base_dir, filepaths, is_read_text, prefix, logger):
     data_weights = []
     source_filename = []
     last_written_length = 0
+
     for filename in filepaths:
         filename = filename.strip()
         bin_filename = get_binary_filename(base_dir, prefix, filename)
@@ -132,6 +133,7 @@ def get_datasets(region_str, base_dir, filepaths, is_read_text, prefix, logger):
             if t in filename:
                 region_name = t
                 break
+
         #weights = np.ones_like(weights) / inst_weights[region_name]
         if type(features) is list:
             data_features  += features
@@ -140,7 +142,7 @@ def get_datasets(region_str, base_dir, filepaths, is_read_text, prefix, logger):
             data_features  += features.tolist()
             data_labels    += labels.tolist()
         data_weights   += weights.tolist()
-        source_filename += [filename] * len(features)
+        #source_filename += [filename] * len(features)
 
         curr_num_examples = len(data_features)
         if is_read_text:  # and curr_num_examples - last_written_length >= MAX_NUM_EXAMPLES_PER_PICKLE:
@@ -151,17 +153,18 @@ def get_datasets(region_str, base_dir, filepaths, is_read_text, prefix, logger):
             last_written_length = curr_num_examples
 
     # Format labels and weights
-    data_features = np.array(data_features)
-    data_labels   = (np.array(data_labels) > 0).astype(np.int8)
-    data_weights  = np.array(data_weights)
-    with open("sources-{}.txt".format(region_str), "w") as f:
-        f.write("\n".join(source_filename))
+    data_features = np.asarray(data_features)
+    data_labels   = (np.asarray(data_labels) > 0).astype(np.int8)
+    data_weights  = np.asarray(data_weights)
+    #with open("sources-{}.txt".format(region_str), "w") as f:
+    #    f.write("\n".join(source_filename))
     # Remove unwanted features when reading from the binary form
-    # if not is_read_text:
+    #if not is_read_text:
     mask = np.ones(shape=data_features.shape[1]).astype(bool)
     for i in REMOVED_FEATURES:
         mask[i] = False
     data_features = data_features[:, mask]
+
     logger.log("Dataset is loaded, size {}".format(data_features.shape))
     return (data_features, data_labels, data_weights)
 

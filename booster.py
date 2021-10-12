@@ -1,37 +1,35 @@
+import lightgbm as lgb
 import pickle
 import numpy as np
-import ray
 from sklearn.metrics import auc
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import roc_curve
 from .common import print_ts
 from .load_data import persist_model
 
-@ray.remote
-def train(config, train_dataset, valid_dataset,rseed):
-    import lightgbm as lgb
-    #logger.log("start training...")
+def train(config, train_dataset, valid_dataset,region,logger,rseed=1):
+    logger.log("start training...")
     # Strange bug exists that prevents saving all iterations if `early_stopping_rounds` is enabled
     config["early_stopping_rounds"] = None
     config["seed"] = rseed
     # why is this done?
-    valid_sets = [train_dataset]
-    if valid_dataset is not None:
-        valid_sets.append(valid_dataset)
+    #valid_sets = [train_dataset]
+    #if valid_dataset is not None:
+    #    valid_sets.append(valid_dataset)
     try:
         gbm = lgb.train(
             config,
             train_dataset,
             num_boost_round=config["rounds"],
-            valid_sets=valid_sets,
-            # callbacks=[print_ts(logger)],
+            valid_sets=valid_dataset,
+            callbacks=[print_ts(logger)],
             # early_stopping_rounds=config["early_stopping_rounds"],
             # fobj=expobj, feval=exp_eval,
         )
     except Exception as e:
-        #logger.log("Failed to train, {}, {}".format(region, e))
+        logger.log("Failed to train, {}, {}".format(region, e))
         return
-    #logger.log("training completed.")
+    logger.log("training completed.")
     return gbm
     #if n >= 0:
     #    persist_model(config["base_dir"], region + str(n), gbm)
@@ -41,7 +39,6 @@ def train(config, train_dataset, valid_dataset,rseed):
 
 
 def get_scores(region, test_region, features, labels, pkl_model_path, logger):
-    import lightgbm as lgb
     # load model with pickle to predict
     with open(pkl_model_path, 'rb') as fin:
         model = pickle.load(fin)
