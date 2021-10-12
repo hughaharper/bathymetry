@@ -121,7 +121,8 @@ if __name__ == '__main__':
         for region in regions:
             result_ids.append(run_test.remote(region, regions, task))
     elif task == "test-all":
-        result_ids.append(run_test.remote("all", regions, "test-cross"))
+        for i in range(10):
+            result_ids.append(run_test.remote("all{}".format(str(i)), regions, "test-all"))
     elif task == "train-instances":
         for region in regions:
             result_ids.append(run_training_instances.remote([region], region))
