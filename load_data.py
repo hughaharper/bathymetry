@@ -213,7 +213,7 @@ def persist_predictions(base_dir, model_region, test_region, features, label, sc
         pickle.dump((features[:, :4], label, scores, weights), fout)
     with open(get_prediction_path(base_dir, model_region, test_region) + ".txt", 'w') as fout:
         for i in range(len(scores)):
-            fout.write("{}\n".format("\t".join([str(t) for t in features[i][:4]] + ["1", str(scores[i])])))
+            fout.write("{}\n".format("\t".join([str(t) for t in features[i][:4]] + [str(label[i]),str(scores[i]),"1"])))
 
 
 def persist_model(base_dir, region, gbm):
