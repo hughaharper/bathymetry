@@ -1,5 +1,6 @@
 import os
 import random
+import numpy as np
 
 
 data_dir = "/cryosat2/ML_DATA/runtime_data"
@@ -30,19 +31,21 @@ filenames = [filename for filename in os.listdir(dirname) if "US_multi2" not in 
 random.shuffle(filenames)
 filenames = [os.path.join(dirname, filename) for filename in filenames]
 
-#s0, s1 = int(len(filenames) * 0.25), int(len(filenames) * 0.50)
-s0 = 100
-s1 = 200
-tests, validates = filenames[:s0], filenames[s0:s1]
+train_keep = []
+for i in range(10):
+    train_idx = [random.randint(0,len(filenames)) for j in range(1000)]
+    trains = [filenames[id] for id in train_idx]
+    train_keep.append(trains)
+    with open("all-train-{}.txt".format(str(i)),"w") as f:
+        f.write("\n".join(trains))
+        f.write("\n")
+
+test_filenames = np.setdiff1d(filenames,train_keep)
+s0 = int(len(test_filenames)*0.5)
+tests, validates = test_filenames[:s0], test_filenames[s0:]
 for name, dataset in [("test", tests), ("validate", validates)]:
     with open("{}-{}.txt".format("all", name), "w") as f:
         f.write("\n".join(dataset))
         f.write("\n")
 
-train_filenames = filenames[s1:]
-for i in range(10):
-    train_idx = [random.randint(0,len(train_filenames)) for j in range(100)]
-    trains = [train_filenames[id] for id in train_idx]
-    with open("all-train-{}.txt".format(str(i)),"w") as f:
-        f.write("\n".join(trains))
-        f.write("\n")
+
